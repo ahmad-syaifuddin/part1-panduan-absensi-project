@@ -86,7 +86,7 @@ return new class extends Migration
 ```
 APP_NAME=Absensi
 APP_ENV=local
-APP_KEY=base64:jPM4+PzmPp+aJmOVTsMqdcHJnp0G9mpBuaDNbhhMtmQ=
+APP_KEY=base64:adsaiosdiosdisdiodiosdsdsd
 APP_DEBUG=true
 APP_URL=http://localhost
 
