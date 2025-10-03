@@ -20,8 +20,9 @@ cd absensi
 composer require laravel/breeze:^1.19 --dev
 ```
 # Jalankan Breeze dengan stack Blade
+```
 php artisan breeze:install blade
-
+```
 # Instal dependensi Node.js dan build frontend assets
 ```
 npm install
