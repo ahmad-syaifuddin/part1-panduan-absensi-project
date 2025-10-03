@@ -45,7 +45,7 @@ Setelah proyek siap, kita akan membuat struktur data dasar untuk membedakan peng
 
 2.1. Menambahkan Kolom role ke Tabel users
 Kita akan membuat migrasi baru untuk menambahkan kolom role pada tabel users yang sudah dibuat oleh Breeze.
-
+### buat terminal ketiga untuk menangani perintah artisan
 Perintah Artisan:
 
 ```Bash
