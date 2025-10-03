@@ -163,3 +163,10 @@ public function run(): void
     ]);
 }
 ```
+
+### Jalankan Seeder:
+Jalankan perintah berikut untuk mengisi database Anda dengan data pengguna awal.
+
+```Bash
+php artisan db:seed
+```
