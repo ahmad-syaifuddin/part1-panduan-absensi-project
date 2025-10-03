@@ -220,7 +220,7 @@ Jalankan perintah berikut untuk mengisi database Anda dengan data pengguna awal.
 ```Bash
 php artisan db:seed
 ```
-
+lalu cek isi data di tabel users dannn boom langsung terisi data dummy otomatis dengan data yg cukup realistis
 
 🔐 Langkah 3: Middleware Berbasis Role
 Untuk melindungi rute dan halaman khusus admin, kita akan membuat middleware sederhana yang mengecek peran (role) pengguna.
