@@ -110,6 +110,49 @@ Jalankan Migrasi:
 php artisan migrate
 ```
 
+## 2.2.1 UserFactory
+Kita akan memodifikasi UserFactory agar dapat menghasilkan data dummy yang realistis termasuk role, phone, dan gender, serta memastikan domain email adalah @gmail.com.
+
+Kode Factory:
+Buka database/factories/UserFactory.php dan ubah metode definition():
+
+```PHP
+<?php
+
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
+class UserFactory extends Factory
+{
+    // ... kode yang sudah ada ...
+
+    public function definition(): array
+    {
+        // Ambil jenis kelamin acak
+        $gender = $this->faker->randomElement(['Laki-laki', 'Perempuan']);
+
+        // Generate nama sesuai jenis kelamin
+        $name = $gender == 'Laki-laki' ? $this->faker->firstNameMale() : $this->faker->firstNameFemale();
+        $lastName = $this->faker->lastName();
+
+        return [
+            'name' => $name . ' ' . $lastName,
+            // Pastikan email berakhiran @gmail.com
+            'email' => strtolower(str_replace(['.', ' ', '-'], '', $name) . '.' . str_replace(['.', ' ', '-'], '', $lastName) . $this->faker->unique()->randomNumber(2)) . '@gmail.com',
+            'email_verified_at' => now(),
+            'password' => Hash::make('password'),
+            'remember_token' => Str::random(10),
+            'role' => 'karyawan', // Default role untuk dummy
+            'phone' => '08' . $this->faker->unique()->randomNumber(10), // Nomor HP 08xxxxxxxxxx
+            'gender' => $gender,
+        ];
+    }
+}
+```
+
 # 2.2. Membuat Seeder untuk Pengguna Awal
 Kita akan membuat seeder untuk menambahkan pengguna admin dan karyawan secara otomatis ke database.
 
