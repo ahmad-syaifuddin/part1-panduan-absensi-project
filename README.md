@@ -49,7 +49,7 @@ Kita akan membuat migrasi baru untuk menambahkan kolom role pada tabel users yan
 Perintah Artisan:
 
 ```Bash
-php artisan make:migration add_role_to_users_table
+php artisan make:migration add_details_to_users_table
 ```
 Kode Migrasi:
 Buka file migrasi yang baru saja dibuat di database/migrations/ dan tambahkan kode berikut di dalam metode up() dan down().
