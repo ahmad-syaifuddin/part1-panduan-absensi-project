@@ -83,6 +83,7 @@ return new class extends Migration
 ```
 
 ### pastikan isi dari file .env begini sebelum migrate :
+ubah var untuk APP_NAME dan DB_DATABASE
 ```
 APP_NAME=Absensi
 APP_ENV=local
@@ -101,6 +102,7 @@ DB_DATABASE=absensi
 DB_USERNAME=root
 DB_PASSWORD=
 ```
+
 
 Jalankan Migrasi:
 
