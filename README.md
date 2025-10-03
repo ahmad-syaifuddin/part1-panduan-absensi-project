@@ -236,7 +236,7 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'role' => 'karyawan',
                 'phone' => $faker->unique()->numerify('08##########'),
-                'gender' => $faker->randomElement(['Laki-laki', 'Perempuan']),
+                'gender' => 'Laki-laki', // <-- fix laki-laki
                 'email_verified_at' => now(),
                 'remember_token' => Str::random(10),
             ]);
