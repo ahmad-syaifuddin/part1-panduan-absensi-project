@@ -7,24 +7,28 @@ Kita akan memulai dengan instalasi proyek, Breeze, dan penyesuaian yang Anda seb
 1.1. Instalasi Laravel dan Breeze
 Jalankan perintah berikut di Laragon Anda untuk membuat proyek Laravel 10 dan menginstal Laravel Breeze versi 1.19.
 
-Bash
-
 # Buat proyek Laravel baru
+```
 composer create-project laravel/laravel absensi "10.*"
-
+```
 # Masuk ke direktori proyek
+```
 cd absensi
-
+```
 # Instal Laravel Breeze versi 1.19
+```
 composer require laravel/breeze:^1.19 --dev
-
+```
 # Jalankan Breeze dengan stack Blade
 php artisan breeze:install blade
 
 # Instal dependensi Node.js dan build frontend assets
+```
 npm install
+```
+```
 npm run dev
-
+```
 1.2. Penyesuaian postcss.config.js
 Beberapa versi Node.js atau paket bundler mungkin memerlukan format CommonJS. Mengubah ekstensi file ini dapat mengatasi potensi kesalahan.
 
@@ -55,17 +59,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Tambahkan kolom 'role' dengan nilai default 'karyawan'
-            // Tipe data string dengan panjang 20
+            // Kolom role untuk otorisasi
             $table->string('role', 20)->default('karyawan')->after('name');
+
+            // Data tambahan untuk kebutuhan Karyawan/Absensi
+            $table->string('phone', 15)->nullable()->after('email');
+            $table->enum('gender', ['Laki-laki', 'Perempuan'])->nullable()->after('phone');
         });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Hapus kolom 'role' jika migrasi di-rollback
-            $table->dropColumn('role');
+            $table->dropColumn(['role', 'phone', 'gender']);
         });
     }
 };
