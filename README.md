@@ -222,7 +222,7 @@ class UserSeeder extends Seeder
             'gender' => 'Laki-laki',
         ]);
 
-        // 3. Buat 10 Data Dummy Karyawan menggunakan Factory
+        // 3. Buat 13 Data Dummy Karyawan menggunakan Factory
         User::factory()->count(13)->create();
     }
 }
