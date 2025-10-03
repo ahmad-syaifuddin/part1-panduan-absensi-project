@@ -109,3 +109,57 @@ Jalankan Migrasi:
 ```Bash
 php artisan migrate
 ```
+
+# 2.2. Membuat Seeder untuk Pengguna Awal
+Kita akan membuat seeder untuk menambahkan pengguna admin dan karyawan secara otomatis ke database.
+
+Perintah Artisan:
+
+```Bash
+php artisan make:seeder UserSeeder
+```
+Kode Seeder:
+Buka file database/seeders/UserSeeder.php dan isi dengan kode berikut:
+
+```PHP
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+
+class UserSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // Buat user Admin
+        User::create([
+            'name' => 'Admin',
+            'email' => 'admin@absensi.test',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+        ]);
+
+        // Buat user Karyawan
+        User::create([
+            'name' => 'Karyawan',
+            'email' => 'karyawan@absensi.test',
+            'password' => Hash::make('password'),
+            'role' => 'karyawan',
+        ]);
+    }
+}
+```
+Integrasi Seeder ke DatabaseSeeder:
+Buka file database/seeders/DatabaseSeeder.php dan tambahkan pemanggilan UserSeeder di dalam metode run().
+
+```PHP
+public function run(): void
+{
+    $this->call([
+        UserSeeder::class,
+    ]);
+}
+```
