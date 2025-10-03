@@ -305,3 +305,135 @@ protected $middlewareAliases = [
     'admin' => \App\Http\Middleware\AdminMiddleware::class, // <-- Tambahkan baris ini
 ];
 ```
+
+# ✍️ Langkah 4: CRUD Manajemen Pengguna (Admin)
+Sekarang kita akan membuat fitur lengkap untuk mengelola pengguna (CRUD).
+
+## 4.1. Membuat Controller
+Kita akan membuat UserController yang berisi semua logika untuk CRUD pengguna.
+
+Perintah Artisan:
+
+```Bash
+php artisan make:controller Admin/UserController
+```
+## 4.2. Logika Controller
+Buka app/Http/Controllers/Admin/UserController.php dan tambahkan kode untuk metode index, create, store, show, edit, update, dan destroy.
+```PHP
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+
+class UserController extends Controller
+{
+    public function index()
+    {
+        $users = User::latest()->paginate(10);
+        return view('admin.users.index', compact('users'));
+    }
+
+    public function create()
+    {
+        return view('admin.users.create');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => ['required', 'string', Rule::in(['admin', 'karyawan'])],
+        ]);
+
+        User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => $validated['role'],
+        ]);
+
+        return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil ditambahkan!');
+    }
+    
+    public function show(User $user)
+    {
+        return view('admin.users.show', compact('user'));
+    }
+
+    public function edit(User $user)
+    {
+        return view('admin.users.edit', compact('user'));
+    }
+
+    public function update(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users')->ignore($user->id),
+            ],
+            'password' => 'nullable|string|min:8|confirmed',
+            'role' => ['required', 'string', Rule::in(['admin', 'karyawan'])],
+        ]);
+
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->role = $validated['role'];
+
+        if ($request->filled('password')) {
+            $user->password = Hash::make($validated['password']);
+        }
+        
+        $user->save();
+
+        return redirect()->route('admin.users.index')->with('success', 'Data pengguna berhasil diperbarui!');
+    }
+
+    public function destroy(User $user)
+    {
+        $user->delete();
+
+        return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil dihapus!');
+    }
+}
+```
+
+# 4.3. Rute (Routes)
+Buka file routes/web.php dan tambahkan grup rute di bawah Route::middleware(['auth'])->group(...).
+
+Gunakan alias middleware admin yang baru kita buat untuk melindungi semua rute ini.
+
+```PHP
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
+});
+```
+
+# 4.4. Blade Views untuk CRUD
+Terakhir, kita buat file-file Blade untuk antarmuka pengguna. Pastikan untuk membuat folder admin/users di dalam resources/views.
+```
+resources/views/admin/users/index.blade.php
+```
+
+```
+resources/views/admin/users/create.blade.php
+```
+
+```
+resources/views/admin/users/edit.blade.php
+```
+
+```
+resources/views/admin/users/show.blade.php
+```
