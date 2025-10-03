@@ -665,3 +665,6 @@ resources/views/admin/users/show.blade.php
     </div>
 </x-app-layout>
 ```
+
+> Status Saat Ini:
+Manajemen pengguna sudah selesai. Anda sudah bisa login sebagai admin@gmail.com dengan password "password", dan Anda bisa menambah, mengedit, melihat, dan menghapus pengguna lain melalui dashboard.
