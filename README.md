@@ -844,5 +844,7 @@ edit File: resources/views/layouts/navigation.blade.php
     </div>
 </nav>
 ```
+
+>[!note]
 > Status Saat Ini:
-Manajemen pengguna sudah selesai. Anda sudah bisa login sebagai admin@gmail.com dengan password "password", dan Anda bisa menambah, mengedit, melihat, dan menghapus pengguna lain melalui dashboard.
+> Manajemen pengguna sudah selesai. Anda sudah bisa login sebagai admin@gmail.com dengan password "password", dan Anda bisa menambah, mengedit, melihat, dan menghapus pengguna lain melalui dashboard.
