@@ -611,6 +611,21 @@ resources/views/admin/users/show.blade.php
                         </div>
 
                         <div class="mt-4">
+                            <x-input-label for="gender" :value="__('Jenis Kelamin')" />
+                            <select id="gender" name="gender" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                <option value="Laki-laki" {{ old('gender', $user->gender) == 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                                <option value="Perempuan" {{ old('gender', $user->gender) == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+                            </select>
+                            <x-input-error :messages="$errors->get('gender')" class="mt-2" />
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="phone" :value="__('Nomor HP')" />
+                            <x-text-input id="phone" class="block mt-1 w-full" type="text" name="phone" :value="old('phone', $user->phone)" required />
+                            <x-input-error :messages="$errors->get('phone')" class="mt-2" />
+                        </div>
+
+                        <div class="mt-4">
                             <x-input-label for="password" :value="__('Password Baru (Kosongkan jika tidak ingin diubah)')" />
                             <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" />
                             <x-input-error :messages="$errors->get('password')" class="mt-2" />
@@ -652,6 +667,8 @@ resources/views/admin/users/show.blade.php
                     <div class="mb-4">
                         <p class="text-gray-600">Nama: <span class="font-medium text-gray-900">{{ $user->name }}</span></p>
                         <p class="text-gray-600">Email: <span class="font-medium text-gray-900">{{ $user->email }}</span></p>
+                        <p class="text-gray-600">Jenis Kelamin: <span class="font-medium text-gray-900">{{ $user->gender }}</span></p>
+                        <p class="text-gray-600">Nomor HP: <span class="font-medium text-gray-900">{{ $user->phone }}</span></p>
                         <p class="text-gray-600">Peran: <span class="font-medium text-gray-900">{{ ucfirst($user->role) }}</span></p>
                         <p class="text-gray-600">Terdaftar Sejak: <span class="font-medium text-gray-900">{{ $user->created_at->format('d M Y H:i') }}</span></p>
                     </div>
