@@ -134,21 +134,28 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Buat user Admin
+        // 1. Buat user Admin (Data tetap)
         User::create([
-            'name' => 'Admin',
-            'email' => 'admin@absensi.test',
+            'name' => 'Admin Utama',
+            'email' => 'admin@gmail.com', // Revisi email
             'password' => Hash::make('password'),
             'role' => 'admin',
+            'phone' => '081234567890',
+            'gender' => 'Laki-laki',
         ]);
 
-        // Buat user Karyawan
+        // 2. Buat user Karyawan (Data tetap)
         User::create([
-            'name' => 'Karyawan',
-            'email' => 'karyawan@absensi.test',
+            'name' => 'Budi Karyawan',
+            'email' => 'budi.karyawan@gmail.com', // Revisi email
             'password' => Hash::make('password'),
             'role' => 'karyawan',
+            'phone' => '089876543210',
+            'gender' => 'Laki-laki',
         ]);
+
+        // 3. Buat 10 Data Dummy Karyawan menggunakan Factory
+        User::factory()->count(10)->create();
     }
 }
 ```
