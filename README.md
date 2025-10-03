@@ -177,3 +177,43 @@ Jalankan perintah berikut untuk mengisi database Anda dengan data pengguna awal.
 ```Bash
 php artisan db:seed
 ```
+
+
+🔐 Langkah 3: Middleware Berbasis Role
+Untuk melindungi rute dan halaman khusus admin, kita akan membuat middleware sederhana yang mengecek peran (role) pengguna.
+
+3.1. Membuat Middleware
+Perintah Artisan:
+
+```Bash
+php artisan make:middleware AdminMiddleware
+```
+Kode Middleware:
+Buka file app/Http/Middleware/AdminMiddleware.php dan ubah metode handle() seperti ini:
+
+```PHP
+public function handle(Request $request, Closure $next): Response
+{
+    // Cek apakah pengguna terotentikasi dan memiliki role 'admin'
+    if (auth()->check() && auth()->user()->role === 'admin') {
+        return $next($request);
+    }
+
+    // Redirect atau beri respon 403 jika tidak memiliki role 'admin'
+    return redirect('/dashboard')->with('error', 'Akses ditolak. Anda tidak memiliki hak akses administrator.');
+}
+```
+3.2. Mendaftarkan Middleware
+Buka file app/Http/Kernel.php dan daftarkan alias untuk middleware Anda.
+
+Tambahkan baris berikut di dalam properti $middlewareAliases:
+
+```PHP
+
+protected $middlewareAliases = [
+    // ... kode Breeze yang sudah ada
+    'auth' => \App\Http\Middleware\Authenticate::class,
+    'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+    'admin' => \App\Http\Middleware\AdminMiddleware::class, // <-- Tambahkan baris ini
+];
+```
