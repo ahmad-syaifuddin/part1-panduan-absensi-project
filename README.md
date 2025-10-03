@@ -55,6 +55,8 @@ Kode Migrasi:
 Buka file migrasi yang baru saja dibuat di database/migrations/ dan tambahkan kode berikut di dalam metode up() dan down().
 
 ```PHP
+<?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -63,12 +65,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            // Kolom role untuk otorisasi
-            $table->string('role', 20)->default('karyawan')->after('name');
-
+        Schema::table('users', function (Blueprint $table) {            
             // Data tambahan untuk kebutuhan Karyawan/Absensi
-            $table->string('phone', 15)->nullable()->after('email');
+            $table->string('role', 20)->default('karyawan')->after('email');
+            $table->string('phone', 20)->nullable()->after('role');
             $table->enum('gender', ['Laki-laki', 'Perempuan'])->nullable()->after('phone');
         });
     }
@@ -124,31 +124,56 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Faker\Factory as FakerFactory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ */
 class UserFactory extends Factory
 {
-    // ... kode yang sudah ada ...
+    /**
+     * The current password being used by the factory.
+     */
+    protected static ?string $password;
 
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
     public function definition(): array
     {
-        // Ambil jenis kelamin acak
-        $gender = $this->faker->randomElement(['Laki-laki', 'Perempuan']);
+        $faker = FakerFactory::create('id_ID'); // Pake lokal Indonesia
 
-        // Generate nama sesuai jenis kelamin
-        $name = $gender == 'Laki-laki' ? $this->faker->firstNameMale() : $this->faker->firstNameFemale();
-        $lastName = $this->faker->lastName();
+        $gender = $faker->randomElement(['Laki-laki', 'Perempuan']);
+        $name   = $gender == 'Laki-laki' ? $faker->firstNameMale() : $faker->firstNameFemale();
+        $lastName = $faker->lastName();
 
         return [
             'name' => $name . ' ' . $lastName,
-            // Pastikan email berakhiran @gmail.com
-            'email' => strtolower(str_replace(['.', ' ', '-'], '', $name) . '.' . str_replace(['.', ' ', '-'], '', $lastName) . $this->faker->unique()->randomNumber(2)) . '@gmail.com',
+            'email' => strtolower(
+                str_replace(['.', ' ', '-'], '', $name) .
+                    '.' .
+                    str_replace(['.', ' ', '-'], '', $lastName) .
+                    $faker->unique()->numerify('##')
+            ) . '@gmail.com',
             'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'remember_token' => Str::random(10),
-            'role' => 'karyawan', // Default role untuk dummy
-            'phone' => '08' . $this->faker->unique()->randomNumber(10), // Nomor HP 08xxxxxxxxxx
+            'role' => 'karyawan',
+            'phone' => $faker->unique()->numerify('08##########'),
             'gender' => $gender,
         ];
+    }
+
+    /**
+     * Indicate that the model's email address should be unverified.
+     */
+    public function unverified(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'email_verified_at' => null,
+        ]);
     }
 }
 ```
@@ -180,7 +205,7 @@ class UserSeeder extends Seeder
         // 1. Buat user Admin (Data tetap)
         User::create([
             'name' => 'Admin Utama',
-            'email' => 'admin@gmail.com', // Revisi email
+            'email' => 'admin@gmail.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
             'phone' => '081234567890',
@@ -190,7 +215,7 @@ class UserSeeder extends Seeder
         // 2. Buat user Karyawan (Data tetap)
         User::create([
             'name' => 'Budi Karyawan',
-            'email' => 'budi.karyawan@gmail.com', // Revisi email
+            'email' => 'budi.karyawan@gmail.com',
             'password' => Hash::make('password'),
             'role' => 'karyawan',
             'phone' => '089876543210',
@@ -198,7 +223,7 @@ class UserSeeder extends Seeder
         ]);
 
         // 3. Buat 10 Data Dummy Karyawan menggunakan Factory
-        User::factory()->count(10)->create();
+        User::factory()->count(13)->create();
     }
 }
 ```
