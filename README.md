@@ -23,10 +23,6 @@ composer require laravel/breeze:^1.19 --dev
 ```
 php artisan breeze:install blade
 ```
-# Ubah file postcss.js menjadi postcss.cjs
-```
-mv postcss.js postcss.cjs
-```
 # Instal dependensi Node.js dan build frontend assets
 ```
 npm install
@@ -38,7 +34,10 @@ npm run dev
 Beberapa versi Node.js atau paket bundler mungkin memerlukan format CommonJS. Mengubah ekstensi file ini dapat mengatasi potensi kesalahan.
 
 Ubah nama file postcss.config.js menjadi postcss.config.cjs.
-
+# Ubah file postcss.js menjadi postcss.cjs
+```
+mv postcss.config.js postcss.config.cjs 
+```
 
 ⚙️ Langkah 2: Migrasi, Role, dan Seeder
 Setelah proyek siap, kita akan membuat struktur data dasar untuk membedakan pengguna Admin dan Karyawan.
