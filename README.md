@@ -23,6 +23,10 @@ composer require laravel/breeze:^1.19 --dev
 ```
 php artisan breeze:install blade
 ```
+# Ubah file postcss.js menjadi postcss.cjs
+```
+mv postcss.js postcss.cjs
+```
 # Instal dependensi Node.js dan build frontend assets
 ```
 npm install
