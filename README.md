@@ -848,3 +848,6 @@ edit File: resources/views/layouts/navigation.blade.php
 >[!note]
 > Status Saat Ini:
 > Manajemen pengguna sudah selesai. Anda sudah bisa login sebagai admin@gmail.com dengan password "password", dan Anda bisa menambah, mengedit, melihat, dan menghapus pengguna lain melalui dashboard.
+
+### Next lanjut Part 2
+Untuk informasi lebih lanjut, kunjungi [Panduannya](https://github.com/ahmad-syaifuddin/part2-panduan-absensi.git).
