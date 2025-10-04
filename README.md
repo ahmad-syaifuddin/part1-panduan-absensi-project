@@ -1340,7 +1340,7 @@ edit File: resources/views/layouts/navigation.blade.php
 
                     {{-- Link KHUSUS ADMIN --}}
                     @if (Auth::user()->role === 'admin')
-                        <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.index')">
+                        <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')">
                             {{ __('Manajemen Pengguna') }}
                         </x-nav-link>
 
@@ -1414,7 +1414,7 @@ edit File: resources/views/layouts/navigation.blade.php
             
             {{-- Link KHUSUS ADMIN RESPONSIVE --}}
             @if (Auth::user()->role === 'admin')
-                <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.index')">
+                <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')">
                     {{ __('Manajemen Pengguna') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="'#'">
