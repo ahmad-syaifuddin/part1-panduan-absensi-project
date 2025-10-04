@@ -375,6 +375,11 @@ class EmployeeFactory extends Factory
 }
 ```
 
+Silahkan buat dulu file UserSeeder.php kalau belum ada!
+```php
+php artisan make:seeder UserSeeder
+```
+
 Konfigurasi UserSeeder:
 Buka database/seeders/UserSeeder.php. kita akan merevisi isi kodenya sebagai berikut :
 ```php
