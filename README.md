@@ -858,3 +858,352 @@ Buat folder baru `users` di `resources/views/` dan buat file `index.blade.php` d
 ```
 
 ---
+
+## ➕ Langkah 8: Fungsionalitas Tambah Pengguna (Create & Store)
+
+Sekarang kita akan membuat fungsionalitas di balik tombol "Tambah Pengguna". Ini melibatkan dua bagian: halaman formulir (create) dan logika penyimpanan (store).
+
+### 8.1. Update UserController (Metode create)
+
+Buka `app/Http/Controllers/UserController.php` dan tambahkan method `create()`:
+
+```php
+// app/Http/Controllers/UserController.php
+
+// ... (method index) ...
+
+/**
+ * Show the form for creating a new resource.
+ */
+public function create()
+{
+    // Cukup kembalikan view yang berisi form
+    return view('users.create');
+}
+
+// ... (method store dan lainnya) ...
+```
+
+### 8.2. Buat View users.create.blade.php
+
+Buat file baru `resources/views/users/create.blade.php` dengan kode berikut:
+
+```blade
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Tambah Pengguna Baru') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900">
+                    
+                    {{-- Error Messages --}}
+                    @if ($errors->any())
+                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                            <strong class="font-bold">Oops!</strong>
+                            <span class="block sm:inline">Ada beberapa masalah dengan input Anda.</span>
+                            <ul class="mt-3 list-disc list-inside text-sm text-red-600">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    {{-- Form Tambah Pengguna --}}
+                    <form method="POST" action="{{ route('users.store') }}">
+                        @csrf
+
+                        <div>
+                            <x-input-label for="name" :value="__('Nama')" />
+                            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus />
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="email" :value="__('Email')" />
+                            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required />
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="role" :value="__('Role')" />
+                            <select name="role" id="role" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <option value="karyawan">Karyawan</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="password" :value="__('Password')" />
+                            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required />
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
+                            <x-text-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" required />
+                        </div>
+
+                        <div class="flex items-center justify-end mt-4">
+                            <a href="{{ route('users.index') }}" class="text-sm text-gray-600 hover:text-gray-900 mr-4">
+                                Batal
+                            </a>
+                            <x-primary-button>
+                                {{ __('Simpan') }}
+                            </x-primary-button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
+```
+
+---
+
+## 💾 Langkah 9: Logika Penyimpanan Data (Metode store)
+
+Sekarang kita isi logika untuk memproses data dari form.
+
+### 9.1. Update UserController (Metode store)
+
+Buka `app/Http/Controllers/UserController.php` dan tambahkan method `store()`:
+
+```php
+// app/Http/Controllers/UserController.php
+
+use Illuminate\Http\Request;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash; // <-- Tambahkan ini
+use Illuminate\Validation\Rules;      // <-- Tambahkan ini
+
+// ... (method create) ...
+
+/**
+ * Store a newly created resource in storage.
+ */
+public function store(Request $request)
+{
+    // 1. Validasi Input
+    $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+        'role' => ['required', 'in:admin,karyawan'],
+        'password' => ['required', 'confirmed', Rules\Password::defaults()],
+    ]);
+
+    // 2. Buat User Baru
+    User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'role' => $request->role,
+        'password' => Hash::make($request->password), // Enkripsi password
+    ]);
+
+    // 3. Redirect ke halaman index dengan pesan sukses
+    return redirect()->route('users.index')
+                     ->with('success', 'Pengguna baru berhasil ditambahkan.');
+}
+
+// ... (method show dan lainnya) ...
+```
+
+**Penjelasan Logika store():**
+
+- `$request->validate([...])`: Validasi input. Jika ada aturan yang tidak terpenuhi, Laravel otomatis mengembalikan ke form dengan pesan error
+- `User::create([...])`: Jika validasi berhasil, data disimpan ke database
+- `Hash::make(...)`: Enkripsi password sebelum menyimpan (SANGAT PENTING!)
+- `redirect()->...->with(...)`: Redirect ke halaman index dengan flash message
+
+---
+
+## 🔧 Langkah 10: Uji Coba Tambah Pengguna
+
+### 10.1. Testing
+
+1. Buka halaman `/users`
+2. Klik tombol "Tambah Pengguna"
+3. Coba submit form dengan data kosong atau password yang tidak cocok → Anda akan melihat pesan error
+4. Isi formulir dengan benar, lalu klik "Simpan"
+5. Jika berhasil, Anda akan kembali ke halaman daftar dengan pesan sukses hijau
+
+---
+
+## ✏️ Langkah 11: Fungsionalitas Edit Pengguna (Edit & Update)
+
+Prosesnya mirip dengan "Tambah Data", tapi formulirnya sudah terisi dengan data lama.
+
+### 11.1. Update UserController (Metode edit)
+
+Buka `app/Http/Controllers/UserController.php` dan tambahkan method `edit()`:
+
+```php
+// app/Http/Controllers/UserController.php
+
+// ... (method store) ...
+
+/**
+ * Show the form for editing the specified resource.
+ */
+public function edit(User $user)
+{
+    // Variabel $user sudah otomatis berisi data user yang akan diedit
+    // berkat Route Model Binding dari Laravel
+    return view('users.edit', compact('user'));
+}
+
+// ... (method update dan lainnya) ...
+```
+
+### 11.2. Buat View users.edit.blade.php
+
+Buat file baru `resources/views/users/edit.blade.php`:
+
+```blade
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Edit Pengguna: ') }} {{ $user->name }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900">
+                    
+                    {{-- Error Messages --}}
+                    @if ($errors->any())
+                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                            <strong class="font-bold">Oops!</strong>
+                            <ul class="mt-3 list-disc list-inside text-sm text-red-600">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    {{-- Form Edit Pengguna --}}
+                    <form method="POST" action="{{ route('users.update', $user->id) }}">
+                        @csrf
+                        @method('PUT')
+
+                        <div>
+                            <x-input-label for="name" :value="__('Nama')" />
+                            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name', $user->name)" required autofocus />
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="email" :value="__('Email')" />
+                            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $user->email)" required />
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="role" :value="__('Role')" />
+                            <select name="role" id="role" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <option value="karyawan" {{ old('role', $user->role) == 'karyawan' ? 'selected' : '' }}>Karyawan</option>
+                                <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Admin</option>
+                            </select>
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="password" :value="__('Password (Opsional)')" />
+                            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" />
+                            <p class="text-sm text-gray-500 mt-1">Kosongkan jika tidak ingin mengubah password.</p>
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
+                            <x-text-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" />
+                        </div>
+
+                        <div class="flex items-center justify-end mt-4">
+                            <a href="{{ route('users.index') }}" class="text-sm text-gray-600 hover:text-gray-900 mr-4">
+                                Batal
+                            </a>
+                            <x-primary-button>
+                                {{ __('Update') }}
+                            </x-primary-button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
+```
+
+**Perbedaan Utama dari Form create:**
+
+- `action="{{ route('users.update', $user->id) }}"`: Form dikirim ke rute update dengan ID pengguna
+- `@method('PUT')`: Method spoofing untuk memberitahu Laravel ini adalah request PUT (update)
+- `:value="old('name', $user->name)"`: Mengambil data lama jika ada error validasi, jika tidak ambil dari database
+- Password Opsional: Label diubah untuk menunjukkan password tidak wajib diisi
+
+---
+
+## 🔄 Langkah 12: Logika Update Data (Metode update)
+
+### 12.1. Update UserController (Metode update)
+
+Buka `app/Http/Controllers/UserController.php` dan tambahkan method `update()`:
+
+```php
+// app/Http/Controllers/UserController.php
+
+use Illuminate\Validation\Rule; // <-- Tambahkan ini di atas
+
+// ... (method edit) ...
+
+/**
+ * Update the specified resource in storage.
+ */
+public function update(Request $request, User $user)
+{
+    // 1. Validasi Input
+    $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+        'role' => ['required', 'in:admin,karyawan'],
+        'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+    ]);
+
+    // 2. Siapkan data untuk di-update
+    $updateData = [
+        'name' => $request->name,
+        'email' => $request->email,
+        'role' => $request->role,
+    ];
+
+    // 3. Cek apakah password diisi
+    if ($request->filled('password')) {
+        $updateData['password'] = Hash::make($request->password);
+    }
+
+    // 4. Update data user
+    $user->update($updateData);
+
+    // 5. Redirect ke halaman index dengan pesan sukses
+    return redirect()->route('users.index')
+                     ->with('success', 'Data pengguna berhasil diperbarui.');
+}
+
+// ... (method destroy) ...
+```
+
+**Penjelasan Logika update():**
+
+- `Rule::unique('users')->ignore($user->id)`: Pastikan email unik, KECUALI untuk pengguna ini sendiri
+- `'password' => ['nullable', ...]`: Field password boleh kosong
+- `if ($request->filled('password'))`: Hanya update password jika diisi
+- `$user->update(...)`: Memperbarui data di database
+
+---
+
+**Progress:** Selesai sekitar 80% dari panduan lengkap
+
+Ketik **"lanjut"** untuk melanjutkan ke bagian terakhir (Detail, Hapus, dan Update Navigation)!
