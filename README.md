@@ -1564,7 +1564,7 @@ Fondasi aplikasi sudah sangat kuat. Di **Part 2**, kita akan melanjutkan dengan:
 
 ## 📚 Informasi Part 2
 
-Untuk melanjutkan pengembangan aplikasi absensi dengan fitur-fitur lanjutan, kunjungi:
+Untuk melanjutkan pengembangan aplikasi absensi dengan fitur-fitur lanjutan yaitu ``**Fitur utama Absensi pembuatan Logik dan view blade untuk menyimpan data absensi karyawan**``, kunjungi:
 
 **[Part 2 - Panduan Absensi Project](https://github.com/ahmad-syaifuddin/part2-panduan-absensi-project.git)**
 
