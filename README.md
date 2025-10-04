@@ -67,7 +67,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {            
             // Data tambahan untuk kebutuhan Karyawan/Absensi
-            $table->string('role', 20)->default('karyawan')->after('email');
+            $table->enum('role', ['admin', 'karyawan'])->default('karyawan')->after('email');
         });
     }
 
@@ -108,314 +108,305 @@ Jalankan Migrasi:
 php artisan migrate
 ```
 
-## 2.2.1 UserFactory
-Kita akan memodifikasi UserFactory agar dapat menghasilkan data dummy yang realistis termasuk role, phone, dan gender, serta memastikan domain email adalah @gmail.com.
+Buat Model dan Migrasi Employee:
+Tabel ini akan menyimpan data detail karyawan yang terhubung dengan tabel users.
 
-Kode Factory:
-Buka database/factories/UserFactory.php dan ubah metode definition():
+```Bash
+php artisan make:model Employee -m
+```
+Buka file migrasi employees yang baru dibuat dan isi dengan kode berikut:
+
+```PHP
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('employees', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('nama_lengkap');
+            $table->string('nip')->unique();
+            $table->string('posisi');
+            $table->string('jabatan');
+            $table->date('tanggal_perekrutan');
+            $table->string('no_hp');
+            $table->text('alamat');
+            $table->enum('jenis_kelamin', ['Laki-laki', 'Perempuan']);
+            $table->enum('status', ['aktif', 'tidak aktif', 'dihentikan'])->default('aktif');
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('employees');
+    }
+};
+```
+Buat Model dan Migrasi Attendance & Holiday (Persiapan):
+Kita buat sekarang agar struktur database lengkap.
+
+
+```
+php artisan make:model Attendance -m
+```
+```
+php artisan make:model Holiday -m
+```
+Isi file migrasi attendances:
 
 ```PHP
 <?php
 
-namespace Database\Factories;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
-use Faker\Factory as FakerFactory;
-
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
- */
-class UserFactory extends Factory
+return new class extends Migration
 {
-    /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
-
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
-    public function definition(): array
+    public function up(): void
     {
-        $faker = FakerFactory::create('id_ID'); // Pake lokal Indonesia
-
-        $gender = $faker->randomElement(['Laki-laki', 'Perempuan']);
-        $name   = $gender == 'Laki-laki' ? $faker->firstNameMale() : $faker->firstNameFemale();
-        $lastName = $faker->lastName();
-
-        return [
-            'name' => $name . ' ' . $lastName,
-            'email' => strtolower(
-                str_replace(['.', ' ', '-'], '', $name) .
-                    '.' .
-                    str_replace(['.', ' ', '-'], '', $lastName) .
-                    $faker->unique()->numerify('##')
-            ) . '@gmail.com',
-            'email_verified_at' => now(),
-            'password' => Hash::make('password'),
-            'remember_token' => Str::random(10),
-            'role' => 'karyawan',
-        ];
+        Schema::create('attendances', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('employee_id')->constrained()->onDelete('cascade');
+            $table->date('date');
+            $table->time('time_in')->nullable();
+            $table->time('time_out')->nullable();
+            $table->enum('status', ['Hadir', 'Terlambat', 'Izin', 'Alpa'])->default('Alpa');
+            $table->text('notes')->nullable();
+            $table->timestamps();
+        });
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function down(): void
     {
-        return $this->state(fn(array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        Schema::dropIfExists('attendances');
+    }
+};
+```
+Isi file migrasi holidays:
+
+```PHP
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('holidays', function (Blueprint $table) {
+            $table->id();
+            $table->date('date')->unique();
+            $table->string('description');
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('holidays');
+    }
+};
+```
+Jalankan Migrasi:
+Sekarang, jalankan perintah ini untuk membuat semua tabel di database Anda.
+
+Bash
+
+php artisan migrate
+Langkah 3: Relasi Model, Factory, dan Seeder
+Kita akan membuat data dummy agar aplikasi kita tidak kosong.
+
+Definisikan Relasi Model:
+Buka app/Models/User.php dan tambahkan relasi hasOne ke Employee. Juga tambahkan role ke $fillable.
+
+```PHP
+// app/Models/User.php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, HasFactory, Notifiable;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'role', // Tambahkan ini
+    ];
+
+    // ... (kode lainnya)
+
+    /**
+     * Get the employee associated with the user.
+     */
+    public function employee(): HasOne
+    {
+        return $this->hasOne(Employee::class);
     }
 }
 ```
+Buka app/Models/Employee.php dan tambahkan relasi belongsTo ke User, serta definisikan properti $fillable.
 
-# 2.2. Membuat Seeder untuk Pengguna Awal
-Kita akan membuat seeder untuk menambahkan pengguna admin dan karyawan secara otomatis ke database.
+```PHP
+// app/Models/Employee.php
+namespace App\Models;
 
-Perintah Artisan:
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Employee extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'nama_lengkap',
+        'nip',
+        'posisi',
+        'jabatan',
+        'tanggal_perekrutan',
+        'no_hp',
+        'alamat',
+        'jenis_kelamin',
+        'status',
+    ];
+
+    /**
+     * Get the user that owns the employee.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+}
+```
+Modifikasi UserFactory:
+Buka database/factories/UserFactory.php dan tambahkan role.
+
+```PHP
+// database/factories/UserFactory.php
+public function definition(): array
+{
+    return [
+        'name' => fake()->name(),
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => static::$password ??= Hash::make('password'),
+        'remember_token' => Str::random(10),
+        'role' => 'karyawan', // Default role
+    ];
+}
+```
+Buat EmployeeFactory:
 
 ```Bash
-php artisan make:seeder UserSeeder
+php artisan make:factory EmployeeFactory --model=Employee
 ```
-Kode Seeder:
-Buka file database/seeders/UserSeeder.php dan isi dengan kode berikut:
+Buka database/factories/EmployeeFactory.php dan isi dengan logika untuk membuat data dummy karyawan.
 
 ```PHP
 <?php
+namespace Database\Factories;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+class EmployeeFactory extends Factory
+{
+    public function definition(): array
+    {
+        return [
+            'nama_lengkap' => fake()->name(),
+            'nip' => fake()->unique()->numerify('##########'),
+            'posisi' => fake()->jobTitle(),
+            'jabatan' => fake()->randomElement(['Staff', 'Supervisor', 'Manager']),
+            'tanggal_perekrutan' => fake()->date(),
+            'no_hp' => fake()->phoneNumber(),
+            'alamat' => fake()->address(),
+            'jenis_kelamin' => fake()->randomElement(['Laki-laki', 'Perempuan']),
+            'status' => 'aktif',
+        ];
+    }
+}
+```
+Konfigurasi DatabaseSeeder:
+Buka database/seeders/DatabaseSeeder.php. Kita akan membuat 1 Admin dan 10 Karyawan. Ganti email agar mudah diingat, dan pastikan setiap user memiliki data employee.
+
+```PHP
+<?php
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Models\Employee;
 use App\Models\User;
-use App\Models\Employee; // <-- WAJIB TAMBAHKAN INI
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Faker\Factory as Faker;
 
-class UserSeeder extends Seeder
+class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $faker = Faker::create('id_ID');
-
-        // 1. Buat user Admin (HANYA data user, TANPA data employee)
-        User::create([
-            'name' => 'Admin Utama',
+        // Membuat 1 User Admin
+        User::factory()->create([
+            'name' => 'Admin User',
             'email' => 'admin@gmail.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin', // Kolom 'role' tetap di tabel users untuk pembeda
+            'role' => 'admin',
+            'password' => Hash::make('admin123'),
         ]);
 
-        // 2. Buat user Karyawan (buat user, LALU buat data employee-nya)
-        $budiUser = User::create([
-            'name' => 'Budi Karyawan', // Nama untuk login
-            'email' => 'budi.karyawan@gmail.com',
-            'password' => Hash::make('password'),
+        // Membuat 1 User Karyawan untuk testing
+        User::factory()->create([
+            'name' => 'Test Karyawan',
+            'email' => 'karyawan@gmail.com',
             'role' => 'karyawan',
+            'password' => Hash::make('karyawan123'),
         ]);
 
-        Employee::create([
-            'user_id' => $budiUser->id, // Hubungkan ke user Budi
-            'full_name' => 'Budi Karyawan Setiawan', // Nama lengkap untuk HRD
-            'employee_code' => 'K001',
-            'position' => 'Staff IT',
-            'department' => 'Teknologi Informasi',
-            'hire_date' => now()->subMonths(6),
-            'phone' => '089876543210',
-            'address' => $faker->address,
-        ]);
-
-        // 3. Buat 13 Karyawan lainnya secara otomatis
-        // Gunakan factory hanya untuk membuat user
-        User::factory()->count(13)->create()->each(function ($user, $index) use ($faker) {
-            // Lalu untuk setiap user, buat data employee-nya
-            Employee::create([
-                'user_id' => $user->id,
-                'full_name' => $user->name,
-                'employee_code' => 'K' . str_pad($index + 2, 3, '0', STR_PAD_LEFT), // K002, K003, ...
-                'position' => $faker->randomElement(['Staff Marketing', 'Staff Keuangan', 'Developer']),
-                'department' => $faker->randomElement(['Pemasaran', 'Keuangan', 'Teknologi Informasi']),
-                'hire_date' => $faker->dateTimeBetween('-2 years', 'now'),
-                'phone' => $faker->unique()->numerify('08##########'),
-                'address' => $faker->address,
-            ]);
+        // Membuat 10 Karyawan dummy menggunakan factory
+        User::factory(10)->create()->each(function ($user) {
+            // Untuk setiap user yang dibuat, buatkan juga data employee
+            Employee::factory()->create(['user_id' => $user->id]);
         });
     }
 }
 ```
-Integrasi Seeder ke DatabaseSeeder:
-Buka file database/seeders/DatabaseSeeder.php dan tambahkan pemanggilan UserSeeder di dalam metode run().
-
-```PHP
-public function run(): void
-{
-    $this->call([
-        UserSeeder::class,
-    ]);
-}
-```
-
-### Jalankan Seeder:
-Jalankan perintah berikut untuk mengisi database Anda dengan data pengguna awal.
+Jalankan Seeder:
+Perintah ini akan menghapus semua data lama dan mengisi database dengan data dari seeder.
 
 ```Bash
-php artisan db:seed
+php artisan migrate:fresh --seed
 ```
-lalu cek isi data di tabel users dannn boom langsung terisi data dummy otomatis dengan data yg cukup realistis
+Sekarang database Anda sudah terisi dengan 1 admin, 1 karyawan testing, dan 10 karyawan dummy.
 
-🔐 Langkah 3: Middleware Berbasis Role
-Untuk melindungi rute dan halaman khusus admin, kita akan membuat middleware sederhana yang mengecek peran (role) pengguna.
+Admin Login: admin@gmail.com / admin123
 
-3.1. Membuat Middleware
-Perintah Artisan:
+Karyawan Login: karyawan@gmail.com / karyawan123
 
-```Bash
-php artisan make:middleware AdminMiddleware
-```
-Kode Middleware:
-Buka file app/Http/Middleware/AdminMiddleware.php dan ubah metode handle() seperti ini:
+Sampai di sini, fondasi aplikasi kita sudah sangat kuat. Kita sudah punya:
 
-```PHP
-public function handle(Request $request, Closure $next): Response
-{
-    // Cek apakah pengguna terotentikasi dan memiliki role 'admin'
-    if (auth()->check() && auth()->user()->role === 'admin') {
-        return $next($request);
-    }
+Proyek Laravel dengan otentikasi.
 
-    // Redirect atau beri respon 403 jika tidak memiliki role 'admin'
-    return redirect('/dashboard')->with('error', 'Akses ditolak. Anda tidak memiliki hak akses administrator.');
-}
-```
-3.2. Mendaftarkan Middleware
-Buka file app/Http/Kernel.php dan daftarkan alias untuk middleware Anda.
+Struktur database yang lengkap.
 
-Tambahkan baris berikut di dalam properti $middlewareAliases:
+Data dummy untuk pengembangan.
 
-```PHP
-
-protected $middlewareAliases = [
-    // ... kode Breeze yang sudah ada
-    'auth' => \App\Http\Middleware\Authenticate::class,
-    'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
-    'admin' => \App\Http\Middleware\AdminMiddleware::class, // <-- Tambahkan baris ini
-];
-```
-
-# ✍️ Langkah 4: CRUD Manajemen Pengguna (Admin)
-Sekarang kita akan membuat fitur lengkap untuk mengelola pengguna (CRUD).
-
-## 4.1. Membuat Controller
-Kita akan membuat UserController yang berisi semua logika untuk CRUD pengguna.
-
-Perintah Artisan:
-
-```Bash
-php artisan make:controller Admin/UserController
-```
-## 4.2. Logika Controller
-Buka app/Http/Controllers/Admin/UserController.php dan tambahkan kode untuk metode index, create, store, show, edit, update, dan destroy.
-```PHP
-<?php
-
-namespace App\Http\Controllers\Admin;
-
-use App\Http\Controllers\Controller;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
-
-class UserController extends Controller
-{
-    public function index()
-    {
-        $users = User::latest()->paginate(10);
-        return view('admin.users.index', compact('users'));
-    }
-
-    public function create()
-    {
-        return view('admin.users.create');
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => ['required', 'string', Rule::in(['admin', 'karyawan'])],
-            'phone' => 'nullable|string|max:20',
-            'gender' => 'nullable|in:Laki-laki,Perempuan',
-        ]);
-
-        User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => $validated['role'],
-            'phone' => $validated['phone'],
-            'gender' => $validated['gender'],
-        ]);
-
-        return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil ditambahkan!');
-    }
-    
-    public function show(User $user)
-    {
-        return view('admin.users.show', compact('user'));
-    }
-
-    public function edit(User $user)
-    {
-        return view('admin.users.edit', compact('user'));
-    }
-
-    public function update(Request $request, User $user)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                Rule::unique('users')->ignore($user->id),
-            ],
-            'password' => 'nullable|string|min:8|confirmed',
-            'role' => ['required', 'string', Rule::in(['admin', 'karyawan'])],
-            'phone' => 'nullable|string|max:20',
-            'gender' => 'nullable|in:Laki-laki,Perempuan',
-        ]);
-
-        $user->name = $validated['name'];
-        $user->email = $validated['email'];
-        $user->role = $validated['role'];
-        $user->phone = $validated['phone'];
-        $user->gender = $validated['gender'];
-
-        if ($request->filled('password')) {
-            $user->password = Hash::make($validated['password']);
-        }
-        
-        $user->save();
-
-        return redirect()->route('admin.users.index')->with('success', 'Data pengguna berhasil diperbarui!');
-    }
-
-    public function destroy(User $user)
-    {
-        $user->delete();
-
-        return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil dihapus!');
-    }
-}
-```
+---
 
 # 4.3. Rute (Routes)
 Buka file routes/web.php dan tambahkan grup rute di bawah Route::middleware(['auth'])->group(...).
