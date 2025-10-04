@@ -542,16 +542,183 @@ Data dummy untuk pengembangan.
 
 ---
 
-# 4.3. Rute (Routes)
-Buka file routes/web.php dan tambahkan grup rute di bawah Route::middleware(['auth'])->group(...).
+## Langkah 4: Membuat Middleware untuk Role
+Middleware ini berfungsi seperti satpam. Jika pengguna yang mencoba mengakses halaman manajemen pengguna bukan 'admin', sistem akan otomatis menolaknya.
 
-Gunakan alias middleware admin yang baru kita buat untuk melindungi semua rute ini.
+### 4.1. Buat File Middleware
+Jalankan perintah ini di terminal Anda:
+
+```Bash
+php artisan make:middleware RoleMiddleware
+```
+Perintah ini akan membuat file baru di app/Http/Middleware/RoleMiddleware.php.
+
+### 4.2. Isi Logika Middleware
+Buka file RoleMiddleware.php yang baru saja dibuat dan ubah isinya menjadi seperti ini:
 
 ```PHP
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
-});
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
+
+class RoleMiddleware
+{
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
+    public function handle(Request $request, Closure $next, ...$roles): Response
+    {
+        // Cek dulu apakah pengguna sudah login atau belum.
+        if (!Auth::check()) {
+            return redirect('login');
+        }
+
+        // Ambil role dari pengguna yang sedang login.
+        $userRole = Auth::user()->role;
+
+        // Cek apakah role pengguna ada di dalam daftar role yang diizinkan ($roles).
+        if (in_array($userRole, $roles)) {
+            // Jika cocok, izinkan pengguna melanjutkan request.
+            return $next($request);
+        }
+
+        // Jika tidak cocok, tolak akses (Forbidden).
+        abort(403, 'ANDA TIDAK MEMILIKI AKSES KE HALAMAN INI.');
+    }
+}
 ```
+
+### 4.3. Daftarkan Middleware
+Agar bisa kita panggil dengan nama role, daftarkan middleware ini di app/Http/Kernel.php. Tambahkan satu baris di dalam array $middlewareAliases.
+
+```PHP
+// app/Http/Kernel.php
+
+protected $middlewareAliases = [
+    'auth' => \App\Http\Middleware\Authenticate::class,
+    'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
+    'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
+    'can' => \Illuminate\Auth\Middleware\Authorize::class,
+    'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+    'precognitive' => \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
+    'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+    'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+
+    // Tambahkan baris ini di akhir
+    'role' => \App\Http\Middleware\RoleMiddleware::class,
+];
+```
+
+## Langkah 5: Controller dan Rute untuk Manajemen Pengguna
+Di sini kita akan membuat "otak" (Controller) yang mengatur logika CRUD dan "alamat" (Rute) untuk mengakses halaman-halaman tersebut.
+
+### 5.1. Buat Controller
+Gunakan flag --resource agar Laravel otomatis membuatkan method-method standar CRUD (index, create, store, show, edit, update, destroy).
+
+```Bash
+php artisan make:controller UserController --resource
+```
+Ini akan membuat file app/Http/Controllers/UserController.php.
+
+### 5.2. Definisikan Rute
+Buka file routes/web.php dan tambahkan rute untuk manajemen pengguna. Kita akan meletakkannya di dalam grup middleware auth dan role:admin agar aman.
+
+```PHP
+<?php
+
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserController; // <-- Tambahkan import ini
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+// Rute bawaan Breeze untuk profil
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+
+// === RUTE KHUSUS ADMIN UNTUK MANAJEMEN PENGGUNA ===
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    // Rute resource akan otomatis membuat semua URL CRUD untuk UserController
+    // Contoh: /users, /users/create, /users/{user}/edit, dll.
+    Route::resource('users', UserController::class);
+});
+
+
+require __DIR__.'/auth.php';
+```
+
+### 5.3. Isi Logika Awal di Controller (index)
+Sekarang, kita isi method index di UserController.php untuk mengambil dan menampilkan daftar semua pengguna.
+
+Buka app/Http/Controllers/UserController.php dan modifikasi seperti ini:
+
+```PHP
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User; // <-- Tambahkan import ini
+use Illuminate\Http\Request;
+
+class UserController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        // Ambil semua data user, diurutkan dari yang terbaru.
+        // Gunakan 'with('employee')' untuk mengambil relasi employee (Eager Loading).
+        // Gunakan paginate() untuk membatasi data per halaman.
+        $users = User::with('employee')->latest()->paginate(10);
+
+        // Kirim data users ke view 'users.index'
+        return view('users.index', compact('users'));
+    }
+
+    // method-method lain akan kita isi pada tahap berikutnya...
+}
+```
+Penjelasan Singkat:
+
+User::with('employee'): Ini adalah teknik Eager Loading. Kita memberitahu Laravel untuk mengambil data User sekaligus data Employee yang terhubung. Ini sangat efisien dan mencegah banyak query ke database.
+
+latest()->paginate(10): Mengurutkan data dari yang paling baru dibuat dan menampilkannya 10 data per halaman.
+
+return view('users.index', ...): Mengirim data $users ke file view yang akan kita buat selanjutnya di resources/views/users/index.blade.php.
+
+Selesai! 👏 Kita sudah berhasil:
+
+Membuat Middleware untuk memproteksi rute admin.
+
+Mempersiapkan Controller dan Rute untuk fitur manajemen pengguna.
+
+Logika di belakang layar sudah siap. Langkah selanjutnya adalah bagian yang paling seru: membangun tampilan (view) CRUD menggunakan Modern Blade Component.
+
+---
 
 # 4.4. Blade Views untuk CRUD
 Terakhir, kita buat file-file Blade untuk antarmuka pengguna. Pastikan untuk membuat folder admin/users di dalam resources/views.
