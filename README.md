@@ -935,6 +935,195 @@ Coba submit form dengan data kosong atau password yang tidak cocok. Anda akan me
 Isi formulir dengan benar, lalu klik "Simpan".
 
 Jika berhasil, Anda akan kembali ke halaman daftar pengguna, melihat pesan sukses berwarna hijau, dan pengguna baru tersebut akan muncul di dalam tabel.
+
+--- 
+
+# Sip, kita hajar lagi! 💪
+Kita lanjutkan dengan membuat fungsionalitas untuk mengedit data pengguna yang sudah ada. Prosesnya mirip dengan "Tambah Data", tapi kali ini formulirnya sudah terisi dengan data lama dan logikanya adalah untuk memperbarui (update) data, bukan membuat data baru.
+
+## Tahap 5: Fungsionalitas Edit dan Update Pengguna
+Langkah 11: Menyiapkan Form Edit (Metode edit dan View)
+Pertama, kita siapkan halaman formulir yang sudah terisi data pengguna yang akan diedit.
+
+### 11.1. Update UserController (Metode edit)
+
+Buka app/Http/Controllers/UserController.php. Metode edit() bertugas mencari data pengguna berdasarkan ID yang dikirim melalui URL, lalu mengirimkan data tersebut ke view.
+
+```PHP
+// app/Http/Controllers/UserController.php
+
+// ... (method store) ...
+
+/**
+ * Show the form for editing the specified resource.
+ */
+public function edit(User $user)
+{
+    // Variabel $user sudah otomatis berisi data user yang akan diedit
+    // berkat Route Model Binding dari Laravel.
+    return view('users.edit', compact('user'));
+}
+
+// ... (method update dan lainnya) ...
+```
+Catatan: Kita menggunakan fitur canggih Laravel bernama Route Model Binding. Dengan mendeklarasikan User $user di argumen metode, Laravel secara otomatis akan mencari User di database dengan id yang sesuai dari URL (/users/{user}/edit). Praktis, kan?
+
+### 11.2. Buat View users.edit.blade.php
+
+Untuk menghemat waktu, kita bisa duplikat file resources/views/users/create.blade.php dan menamainya edit.blade.php. Kemudian, modifikasi isinya agar sesuai untuk proses edit.
+
+Buka file resources/views/users/edit.blade.php yang baru dan ubah isinya menjadi seperti ini:
+
+```HTML
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Edit Pengguna: ') }} {{ $user->name }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900">
+                    
+                    @if ($errors->any())
+                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                            <strong class="font-bold">Oops!</strong>
+                            <ul class="mt-3 list-disc list-inside text-sm text-red-600">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('users.update', $user->id) }}">
+                        @csrf
+                        @method('PUT') <div>
+                            <x-input-label for="name" :value="__('Nama')" />
+                            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name', $user->name)" required autofocus />
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="email" :value="__('Email')" />
+                            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $user->email)" required />
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="role" :value="__('Role')" />
+                            <select name="role" id="role" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <option value="karyawan" {{ old('role', $user->role) == 'karyawan' ? 'selected' : '' }}>Karyawan</option>
+                                <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Admin</option>
+                            </select>
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="password" :value="__('Password (Opsional)')" />
+                            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" />
+                            <p class="text-sm text-gray-500 mt-1">Kosongkan jika tidak ingin mengubah password.</p>
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
+                            <x-text-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" />
+                        </div>
+
+                        <div class="flex items-center justify-end mt-4">
+                            <a href="{{ route('users.index') }}" class="text-sm text-gray-600 hover:text-gray-900 mr-4">
+                                Batal
+                            </a>
+                            <x-primary-button>
+                                {{ __('Update') }}
+                            </x-primary-button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
+```
+Perbedaan Utama dari Form create:
+
+action="{{ route('users.update', $user->id) }}": Form akan dikirim ke rute update dengan menyertakan ID pengguna.
+
+@method('PUT'): Karena form HTML hanya mendukung GET dan POST, kita menggunakan method spoofing ini untuk memberitahu Laravel bahwa ini adalah request PUT (untuk update).
+
+**:value="old('name', $user->name)"**: Ini adalah triknya. Helper old() akan mencoba mengambil data dari sesi (jika ada error validasi), jika tidak ada, ia akan menggunakan nilai default yaitu $user-\>name\ (data dari database).
+
+Password Opsional: Label dan petunjuk diubah untuk memberitahu admin bahwa password tidak wajib diisi jika tidak ingin diubah.
+
+### Langkah 12: Logika Update Data (Metode update)
+Sekarang kita isi logika untuk memproses data dari form edit.
+
+Buka kembali app/Http/Controllers/UserController.php dan isi method update():
+
+```PHP
+// app/Http/Controllers/UserController.php
+
+// ... (method edit) ...
+
+use Illuminate\Validation\Rule; // <-- Tambahkan ini di atas
+
+/**
+ * Update the specified resource in storage.
+ */
+public function update(Request $request, User $user)
+{
+    // 1. Validasi Input
+    $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+        'role' => ['required', 'in:admin,karyawan'],
+        'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+    ]);
+
+    // 2. Siapkan data untuk di-update
+    $updateData = [
+        'name' => $request->name,
+        'email' => $request->email,
+        'role' => $request->role,
+    ];
+
+    // 3. Cek apakah password diisi
+    if ($request->filled('password')) {
+        $updateData['password'] = Hash::make($request->password);
+    }
+
+    // 4. Update data user
+    $user->update($updateData);
+
+    // 5. Redirect ke halaman index dengan pesan sukses
+    return redirect()->route('users.index')
+                     ->with('success', 'Data pengguna berhasil diperbarui.');
+}
+
+// ... (method destroy) ...
+```
+Penjelasan Logika update():
+
+Rule::unique('users')->ignore($user->id): Ini adalah bagian validasi yang krusial. Aturan ini mengatakan, "Pastikan email ini unik di tabel users, KECUALI untuk baris data dengan ID milik pengguna ini sendiri". Ini mencegah error "email has already been taken" saat kita tidak mengubah email.
+
+'password' => ['nullable', ...]: Aturan nullable berarti field password boleh kosong. Jika kosong, validasi untuk password akan dilewati.
+
+if ($request->filled('password')): Kita hanya akan meng-update password jika field password di form diisi. Jika kosong, password lama tidak akan ditimpa.
+
+$user->update(...): Memperbarui data pengguna di database dengan data yang sudah disiapkan.
+
+Uji Coba
+Waktunya mengetes!
+
+Buka halaman /users.
+
+Di salah satu baris data, klik ikon pensil (Edit). Anda akan diarahkan ke form edit yang sudah terisi data.
+
+Ubah nama atau role, lalu klik "Update". Anda akan kembali ke halaman daftar dan melihat pesan sukses serta data yang sudah berubah.
+
+Coba edit lagi, tapi kali ini biarkan password kosong. Klik "Update". Seharusnya data tetap ter-update tanpa mengubah password.
+
+Coba edit lagi dan ubah passwordnya. Setelah update, coba logout dan login kembali dengan password baru untuk memastikan perubahannya berhasil.
+
 ---
 
 # 4.4. Blade Views untuk CRUD
