@@ -153,10 +153,10 @@ return new class extends Migration
 Buat Model dan Migrasi Attendance & Holiday (Persiapan):
 Kita buat sekarang agar struktur database lengkap.
 
-
 ```
 php artisan make:model Attendance -m
 ```
+
 ```
 php artisan make:model Holiday -m
 ```
@@ -221,9 +221,9 @@ return new class extends Migration
 Jalankan Migrasi:
 Sekarang, jalankan perintah ini untuk membuat semua tabel di database Anda.
 
-Bash
-
+```Bash
 php artisan migrate
+```
 Langkah 3: Relasi Model, Factory, dan Seeder
 Kita akan membuat data dummy agar aplikasi kita tidak kosong.
 
@@ -266,6 +266,7 @@ Buka app/Models/Employee.php dan tambahkan relasi belongsTo ke User, serta defin
 
 ```PHP
 // app/Models/Employee.php
+<?php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -302,17 +303,37 @@ Modifikasi UserFactory:
 Buka database/factories/UserFactory.php dan tambahkan role.
 
 ```PHP
-// database/factories/UserFactory.php
-public function definition(): array
+<?php
+
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Faker\Factory as FakerFactory; // Boleh dihapus jika tidak dipakai di sini
+
+class UserFactory extends Factory
 {
-    return [
-        'name' => fake()->name(),
-        'email' => fake()->unique()->safeEmail(),
-        'email_verified_at' => now(),
-        'password' => static::$password ??= Hash::make('password'),
-        'remember_token' => Str::random(10),
-        'role' => 'karyawan', // Default role
-    ];
+    protected static ?string $password;
+
+    public function definition(): array
+    {
+        return [
+            'name' => fake()->name(),
+            'email' => fake()->unique()->safeEmail(),
+            'email_verified_at' => now(),
+            'password' => static::$password ??= Hash::make('password'),
+            'remember_token' => Str::random(10),
+            'role' => 'karyawan', // Default role adalah karyawan
+        ];
+    }
+
+    public function unverified(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'email_verified_at' => null,
+        ]);
+    }
 }
 ```
 Buat EmployeeFactory:
@@ -326,39 +347,48 @@ Buka database/factories/EmployeeFactory.php dan isi dengan logika untuk membuat 
 <?php
 namespace Database\Factories;
 
+// Tambahkan use statement ini
+use Faker\Factory as FakerFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class EmployeeFactory extends Factory
 {
     public function definition(): array
     {
+        // Inisiasi Faker dengan lokal Indonesia
+        $faker = FakerFactory::create('id_ID');
+
         return [
-            'nama_lengkap' => fake()->name(),
-            'nip' => fake()->unique()->numerify('##########'),
-            'posisi' => fake()->jobTitle(),
-            'jabatan' => fake()->randomElement(['Staff', 'Supervisor', 'Manager']),
-            'tanggal_perekrutan' => fake()->date(),
-            'no_hp' => fake()->phoneNumber(),
-            'alamat' => fake()->address(),
-            'jenis_kelamin' => fake()->randomElement(['Laki-laki', 'Perempuan']),
+            // Gunakan $faker yang sudah disetel
+            'nama_lengkap' => $faker->name(),
+            'nip' => $faker->unique()->numerify('##################'), // NIP biasanya 18 digit
+            'posisi' => $faker->jobTitle(),
+            'jabatan' => $faker->randomElement(['Staff', 'Supervisor', 'Manajer', 'Direktur']),
+            'tanggal_perekrutan' => $faker->date(),
+            'no_hp' => $faker->phoneNumber(),
+            'alamat' => $faker->address(),
+            'jenis_kelamin' => $faker->randomElement(['Laki-laki', 'Perempuan']),
             'status' => 'aktif',
         ];
     }
 }
 ```
-Konfigurasi DatabaseSeeder:
-Buka database/seeders/DatabaseSeeder.php. Kita akan membuat 1 Admin dan 10 Karyawan. Ganti email agar mudah diingat, dan pastikan setiap user memiliki data employee.
 
-```PHP
+Konfigurasi UserSeeder:
+Buka database/seeders/UserSeeder.php. kita akan merevisi isi kodenya sebagai berikut :
+```php
 <?php
+
 namespace Database\Seeders;
 
 use App\Models\Employee;
-use App\Models\User;
 use Illuminate\Database\Seeder;
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Faker\Factory as Faker;
 
-class DatabaseSeeder extends Seeder
+class UserSeeder extends Seeder
 {
     public function run(): void
     {
@@ -383,6 +413,52 @@ class DatabaseSeeder extends Seeder
             // Untuk setiap user yang dibuat, buatkan juga data employee
             Employee::factory()->create(['user_id' => $user->id]);
         });
+    }
+}
+```
+
+Konfigurasi DatabaseSeeder:
+Buka database/seeders/DatabaseSeeder.php. Kita akan membuat 1 Admin dan 10 Karyawan. Ganti email agar mudah diingat, dan pastikan setiap user memiliki data employee. Kita panggil (CALL)
+
+```PHP
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Employee; // Pastikan ini di-import
+use App\Models\User;     // Pastikan ini di-import
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash; // Pastikan ini di-import
+
+class DatabaseSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // Membuat 1 User Admin
+        // Kita tidak perlu membuat data employee untuk admin
+        User::factory()->create([
+            'name' => 'Admin User',
+            'email' => 'admin@gmail.com',
+            'role' => 'admin',
+            'password' => Hash::make('admin123'),
+        ]);
+
+        // Membuat 1 User Karyawan untuk testing dengan data employee
+        User::factory()->has(Employee::factory()->state([
+            'nama_lengkap' => 'Karyawan Test',
+            'nip' => '199001012020121001'
+        ]))->create([
+            'name' => 'Karyawan Test',
+            'email' => 'karyawan@gmail.com',
+            'role' => 'karyawan',
+            'password' => Hash::make('karyawan123'),
+        ]);
+
+
+        // Membuat 10 Karyawan dummy menggunakan factory
+        // has(Employee::factory()) akan otomatis membuat data employee
+        // untuk setiap user yang dibuat dan mengisikan user_id-nya.
+        User::factory(10)->has(Employee::factory())->create();
     }
 }
 ```
