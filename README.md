@@ -49,7 +49,7 @@ Kita akan membuat migrasi baru untuk menambahkan kolom role pada tabel users yan
 Perintah Artisan:
 
 ```Bash
-php artisan make:migration add_details_to_users_table
+php artisan make:migration add_role_to_users_table
 ```
 Kode Migrasi:
 Buka file migrasi yang baru saja dibuat di database/migrations/ dan tambahkan kode berikut di dalam metode up() dan down().
@@ -68,15 +68,13 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {            
             // Data tambahan untuk kebutuhan Karyawan/Absensi
             $table->string('role', 20)->default('karyawan')->after('email');
-            $table->string('phone', 20)->nullable()->after('role');
-            $table->enum('gender', ['Laki-laki', 'Perempuan'])->nullable()->after('phone');
         });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['role', 'phone', 'gender']);
+            $table->dropColumn(['role']);
         });
     }
 };
@@ -161,8 +159,6 @@ class UserFactory extends Factory
             'password' => Hash::make('password'),
             'remember_token' => Str::random(10),
             'role' => 'karyawan',
-            'phone' => $faker->unique()->numerify('08##########'),
-            'gender' => $gender,
         ];
     }
 
@@ -196,8 +192,8 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\User;
+use App\Models\Employee; // <-- WAJIB TAMBAHKAN INI
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Faker\Factory as Faker;
 
 class UserSeeder extends Seeder
@@ -206,44 +202,48 @@ class UserSeeder extends Seeder
     {
         $faker = Faker::create('id_ID');
 
-        // 1. Buat user Admin (Data tetap)
+        // 1. Buat user Admin (HANYA data user, TANPA data employee)
         User::create([
             'name' => 'Admin Utama',
-            'email' => 'admin@gmail.com', 
+            'email' => 'admin@gmail.com',
             'password' => Hash::make('password'),
-            'role' => 'admin',
-            'phone' => '081234567890',
-            'gender' => 'Laki-laki',
+            'role' => 'admin', // Kolom 'role' tetap di tabel users untuk pembeda
         ]);
 
-        // 2. Buat user Karyawan (Data tetap)
-        User::create([
-            'name' => 'Budi Karyawan',
-            'email' => 'budi.karyawan@gmail.com', 
+        // 2. Buat user Karyawan (buat user, LALU buat data employee-nya)
+        $budiUser = User::create([
+            'name' => 'Budi Karyawan', // Nama untuk login
+            'email' => 'budi.karyawan@gmail.com',
             'password' => Hash::make('password'),
             'role' => 'karyawan',
-            'phone' => '089876543210',
-            'gender' => 'Laki-laki',
         ]);
 
-        // 3. 6 user nama custom
-        $customNames = ['Haldi', 'Ryandy', 'Maulidi', 'Rio', 'Aldy', 'Ahmad S'];
+        Employee::create([
+            'user_id' => $budiUser->id, // Hubungkan ke user Budi
+            'full_name' => 'Budi Karyawan Setiawan', // Nama lengkap untuk HRD
+            'employee_code' => 'K001',
+            'position' => 'Staff IT',
+            'department' => 'Teknologi Informasi',
+            'hire_date' => now()->subMonths(6),
+            'phone' => '089876543210',
+            'address' => $faker->address,
+        ]);
 
-        foreach ($customNames as $name) {
-            User::create([
-                'name' => $name,
-                'email' => strtolower(str_replace(' ', '', $name)) . '@gmail.com',
-                'password' => Hash::make('password'),
-                'role' => 'karyawan',
+        // 3. Buat 13 Karyawan lainnya secara otomatis
+        // Gunakan factory hanya untuk membuat user
+        User::factory()->count(13)->create()->each(function ($user, $index) use ($faker) {
+            // Lalu untuk setiap user, buat data employee-nya
+            Employee::create([
+                'user_id' => $user->id,
+                'full_name' => $user->name,
+                'employee_code' => 'K' . str_pad($index + 2, 3, '0', STR_PAD_LEFT), // K002, K003, ...
+                'position' => $faker->randomElement(['Staff Marketing', 'Staff Keuangan', 'Developer']),
+                'department' => $faker->randomElement(['Pemasaran', 'Keuangan', 'Teknologi Informasi']),
+                'hire_date' => $faker->dateTimeBetween('-2 years', 'now'),
                 'phone' => $faker->unique()->numerify('08##########'),
-                'gender' => 'Laki-laki', // <-- fix laki-laki
-                'email_verified_at' => now(),
-                'remember_token' => Str::random(10),
+                'address' => $faker->address,
             ]);
-        }
-
-        // 4. 7 user random pakai Factory
-        User::factory()->count(7)->create();
+        });
     }
 }
 ```
