@@ -751,10 +751,195 @@ Contoh penempatannya:
 </head>
 ```
 
+Sekarang kita akan membuat fungsionalitas di balik tombol "Tambah Pengguna". Ini melibatkan dua bagian utama: halaman formulir (create) untuk mengisi data, dan logika di controller (store) untuk memvalidasi dan menyimpan data tersebut ke database.
+
+## Tahap 4: Fungsionalitas Tambah Pengguna
+### Langkah 8: Membuat Form Tambah Pengguna (Metode create dan View)
+Pertama, kita siapkan halaman yang berisi formulir input.
+
+8.1. Update UserController (Metode create)
+
+Buka app/Http/Controllers/UserController.php. Tugas metode create() sangat sederhana: hanya menampilkan file view yang berisi formulir.
+
+```PHP
+
+// app/Http/Controllers/UserController.php
+
+// ... (method index) ...
+
+/**
+ * Show the form for creating a new resource.
+ */
+public function create()
+{
+    // Cukup kembalikan view yang berisi form
+    return view('users.create');
+}
+
+// ... (method store dan lainnya) ...
+```
+
+## 8.2. Buat View users.create.blade.php
+
+Buat file baru di resources/views/users/ bernama create.blade.php. Isi dengan kode berikut. Kode ini menggunakan komponen-komponen Blade yang sudah disediakan Breeze (x-input-label, x-text-input, dll.) agar tampilan kita konsisten.
+
+```HTML
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Tambah Pengguna Baru') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900">
+                    
+                    @if ($errors->any())
+                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                            <strong class="font-bold">Oops!</strong>
+                            <span class="block sm:inline">Ada beberapa masalah dengan input Anda.</span>
+                            <ul class="mt-3 list-disc list-inside text-sm text-red-600">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('users.store') }}">
+                        @csrf
+
+                        <div>
+                            <x-input-label for="name" :value="__('Nama')" />
+                            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus />
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="email" :value="__('Email')" />
+                            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required />
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="role" :value="__('Role')" />
+                            <select name="role" id="role" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <option value="karyawan">Karyawan</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="password" :value="__('Password')" />
+                            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required />
+                        </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
+                            <x-text-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" required />
+                        </div>
+
+                        <div class="flex items-center justify-end mt-4">
+                            <a href="{{ route('users.index') }}" class="text-sm text-gray-600 hover:text-gray-900 mr-4">
+                                Batal
+                            </a>
+                            <x-primary-button>
+                                {{ __('Simpan') }}
+                            </x-primary-button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
+```
+### Langkah 9: Logika Penyimpanan Data (Metode store)
+Sekarang kita isi "otak"-nya. Metode store() akan menerima data dari form, melakukan validasi, dan jika lolos, menyimpannya ke database.
+
+Buka kembali app/Http/Controllers/UserController.php dan isi method store():
+
+```PHP
+// app/Http/Controllers/UserController.php
+
+use Illuminate\Http\Request;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash; // <-- Tambahkan ini
+use Illuminate\Validation\Rules;      // <-- Tambahkan ini
+
+// ... (method create) ...
+
+/**
+ * Store a newly created resource in storage.
+ */
+public function store(Request $request)
+{
+    // 1. Validasi Input
+    $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+        'role' => ['required', 'in:admin,karyawan'],
+        'password' => ['required', 'confirmed', Rules\Password::defaults()],
+    ]);
+
+    // 2. Buat User Baru
+    User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'role' => $request->role,
+        'password' => Hash::make($request->password), // Enkripsi password
+    ]);
+
+    // 3. Redirect ke halaman index dengan pesan sukses
+    return redirect()->route('users.index')
+                     ->with('success', 'Pengguna baru berhasil ditambahkan.');
+}
+
+// ... (method show dan lainnya) ...
+```
+Penjelasan Logika store():
+
+$request->validate([...]): Ini adalah bagian validasi. Jika ada aturan yang tidak terpenuhi (misal: email sudah ada, atau password tidak sama dengan konfirmasinya), Laravel akan otomatis mengembalikan pengguna ke halaman form dan menampilkan pesan error.
+
+User::create([...]): Jika validasi berhasil, data akan disimpan ke tabel users.
+
+Hash::make(...): Ini sangat penting! Kita tidak pernah menyimpan password sebagai teks biasa. Hash::make akan mengenkripsi password sebelum menyimpannya ke database.
+
+redirect()->...->with(...): Setelah berhasil menyimpan, kita arahkan admin kembali ke halaman daftar pengguna (users.index) sambil membawa "pesan" atau flash message bernama success.
+
+### Langkah 10: Menampilkan Pesan Sukses (Flash Message)
+Kita perlu menampilkan flash message yang kita kirim dari controller tadi.
+
+Buka kembali view resources/views/users/index.blade.php dan tambahkan kode berikut tepat di atas tombol "Tambah Pengguna".
+```HTML
+@if (session('success'))
+    <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+        <strong class="font-bold">Sukses!</strong>
+        <span class="block sm:inline">{{ session('success') }}</span>
+    </div>
+@endif
+
+<div class="mb-4">
+    <a href="{{ route('users.create') }}" ...>
+```
+
+Uji Coba
+Sekarang, mari kita tes fungsionalitas penuh:
+
+Buka halaman /users.
+
+Klik tombol "Tambah Pengguna". Anda akan diarahkan ke form.
+
+Coba submit form dengan data kosong atau password yang tidak cocok. Anda akan melihat pesan error.
+
+Isi formulir dengan benar, lalu klik "Simpan".
+
+Jika berhasil, Anda akan kembali ke halaman daftar pengguna, melihat pesan sukses berwarna hijau, dan pengguna baru tersebut akan muncul di dalam tabel.
 ---
 
 # 4.4. Blade Views untuk CRUD
 Terakhir, kita buat file-file Blade untuk antarmuka pengguna. Pastikan untuk membuat folder admin/users di dalam resources/views.
+
 ```
 resources/views/admin/users/index.blade.php
 ```
