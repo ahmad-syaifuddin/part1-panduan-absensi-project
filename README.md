@@ -1204,6 +1204,379 @@ public function update(Request $request, User $user)
 
 ---
 
-**Progress:** Selesai sekitar 80% dari panduan lengkap
+## 👁️ Langkah 13: Menampilkan Detail Pengguna (Show)
 
-Ketik **"lanjut"** untuk melanjutkan ke bagian terakhir (Detail, Hapus, dan Update Navigation)!
+Fungsi ini berguna untuk melihat semua informasi terkait seorang pengguna dalam satu halaman, terutama detail data employee.
+
+### 13.1. Update UserController (Metode show)
+
+Buka `app/Http/Controllers/UserController.php` dan tambahkan method `show()`:
+
+```php
+// app/Http/Controllers/UserController.php
+
+// ... (method index, create, store) ...
+
+/**
+ * Display the specified resource.
+ */
+public function show(User $user)
+{
+    // Kita panggil relasi 'employee' secara eksplisit
+    // untuk memastikan datanya termuat
+    $user->load('employee');
+
+    return view('users.show', compact('user'));
+}
+
+// ... (method edit, update, destroy) ...
+```
+
+**Catatan:** `$user->load('employee')` memastikan relasi employee dimuat, bahkan jika belum dimuat sebelumnya.
+
+### 13.2. Buat View users.show.blade.php
+
+Buat file baru `resources/views/users/show.blade.php`:
+
+```blade
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Detail Pengguna') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900">
+                    
+                    {{-- Tombol Kembali --}}
+                    <div class="mb-6">
+                        <a href="{{ route('users.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                            <i class="fas fa-arrow-left"></i> Kembali
+                        </a>
+                    </div>
+                    
+                    {{-- Detail Data Pengguna --}}
+                    <div class="border-t border-gray-200">
+                        <dl>
+                            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt class="text-sm font-medium text-gray-500">Nama Lengkap</dt>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $user->name }}</dd>
+                            </div>
+                            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt class="text-sm font-medium text-gray-500">Alamat Email</dt>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $user->email }}</dd>
+                            </div>
+                            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt class="text-sm font-medium text-gray-500">Role</dt>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ ucfirst($user->role) }}</dd>
+                            </div>
+                            
+                            @if ($user->employee)
+                                <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">NIP</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $user->employee->nip }}</dd>
+                                </div>
+                                <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">Posisi / Jabatan</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $user->employee->posisi }} / {{ $user->employee->jabatan }}</dd>
+                                </div>
+                                <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">Tanggal Perekrutan</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ \Carbon\Carbon::parse($user->employee->tanggal_perekrutan)->isoFormat('D MMMM Y') }}</dd>
+                                </div>
+                                <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">No. HP & Alamat</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $user->employee->no_hp }} <br> {{ $user->employee->alamat }}</dd>
+                                </div>
+                                <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">Jenis Kelamin</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $user->employee->jenis_kelamin }}</dd>
+                                </div>
+                                <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">Status Karyawan</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ ucfirst($user->employee->status) }}</dd>
+                                </div>
+                            @else
+                                <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">Data Karyawan</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">Tidak ditemukan (Pengguna ini adalah Admin).</dd>
+                                </div>
+                            @endif
+                        </dl>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
+```
+
+**Catatan:** Kita menggunakan Carbon untuk memformat tanggal menjadi format yang lebih mudah dibaca (misal: "4 Oktober 2025").
+
+---
+
+## 🗑️ Langkah 14: Logika Hapus Data (Destroy)
+
+Ini adalah langkah terakhir untuk fungsionalitas CRUD.
+
+### 14.1. Pastikan Form Hapus Sudah Benar
+
+Di file `resources/views/users/index.blade.php`, kita sudah membuat form untuk tombol hapus:
+
+```html
+<form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus pengguna ini?');">
+    @csrf
+    @method('DELETE')
+    <button type="submit" class="text-red-600 hover:text-red-900 ml-4" title="Hapus">
+        <i class="fas fa-trash"></i>
+    </button>
+</form>
+```
+
+**Catatan:** `onsubmit="return confirm(...)"` adalah Javascript sederhana untuk memunculkan kotak dialog konfirmasi sebelum penghapusan.
+
+### 14.2. Update UserController (Metode destroy)
+
+Buka `app/Http/Controllers/UserController.php` dan tambahkan method `destroy()`:
+
+```php
+// app/Http/Controllers/UserController.php
+
+// ... (method update) ...
+
+/**
+ * Remove the specified resource from storage.
+ */
+public function destroy(User $user)
+{
+    // Hapus pengguna dari database
+    $user->delete();
+
+    // Redirect kembali ke halaman index dengan pesan sukses
+    return redirect()->route('users.index')
+                     ->with('success', 'Pengguna berhasil dihapus.');
+}
+```
+
+**Logika sangat sederhana:** `$user->delete()` akan menghapus data. Karena kita sudah mengatur `onDelete('cascade')` pada migrasi employees, maka data karyawan terkait juga akan otomatis ikut terhapus.
+
+---
+
+## 🧭 Langkah 15: Update Navigation Menu
+
+Sekarang kita update menu navigasi agar menampilkan link sesuai role pengguna.
+
+### 15.1. Edit File navigation.blade.php
+
+Buka file `resources/views/layouts/navigation.blade.php` dan ubah isinya:
+
+```blade
+<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex">
+                {{-- Logo --}}
+                <div class="shrink-0 flex items-center">
+                    <a href="{{ route('dashboard') }}">
+                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                    </a>
+                </div>
+
+                {{-- Navigation Links --}}
+                <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
+                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                        {{ __('Dashboard') }}
+                    </x-nav-link>
+
+                    {{-- Link KHUSUS ADMIN --}}
+                    @if (Auth::user()->role === 'admin')
+                        <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')">
+                            {{ __('Manajemen Pengguna') }}
+                        </x-nav-link>
+
+                        {{-- PLACEHOLDER Admin: Absensi, Laporan --}}
+                        <x-nav-link :href="'#'">
+                            {{ __('Absensi Harian') }}
+                        </x-nav-link>
+                        <x-nav-link :href="'#'">
+                            {{ __('Laporan') }}
+                        </x-nav-link>
+                    @endif
+
+                    {{-- Link KHUSUS KARYAWAN --}}
+                    @if (Auth::user()->role === 'karyawan')
+                        <x-nav-link :href="'#'">
+                            {{ __('Absensi Saya') }}
+                        </x-nav-link>
+                        <x-nav-link :href="'#'">
+                            {{ __('Riwayat Absensi') }}
+                        </x-nav-link>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Settings Dropdown --}}
+            <div class="hidden sm:flex sm:items-center sm:ml-6">
+                <x-dropdown align="right" width="48">
+                    <x-slot name="trigger">
+                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                            <div>{{ Auth::user()->name }}</div>
+                            <div class="ml-1">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </button>
+                    </x-slot>
+
+                    <x-slot name="content">
+                        <x-dropdown-link :href="route('profile.edit')">
+                            {{ __('Profile') }}
+                        </x-dropdown-link>
+
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <x-dropdown-link :href="route('logout')"
+                                    onclick="event.preventDefault();
+                                                this.closest('form').submit();">
+                                {{ __('Log Out') }}
+                            </x-dropdown-link>
+                        </form>
+                    </x-slot>
+                </x-dropdown>
+            </div>
+
+            {{-- Hamburger Menu --}}
+            <div class="-mr-2 flex items-center sm:hidden">
+                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- Responsive Navigation Menu --}}
+    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+            
+            {{-- Link KHUSUS ADMIN RESPONSIVE --}}
+            @if (Auth::user()->role === 'admin')
+                <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')">
+                    {{ __('Manajemen Pengguna') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="'#'">
+                    {{ __('Absensi Harian') }}
+                </x-responsive-nav-link>
+            @endif
+
+            {{-- Link KHUSUS KARYAWAN RESPONSIVE --}}
+            @if (Auth::user()->role === 'karyawan')
+                <x-responsive-nav-link :href="'#'">
+                    {{ __('Absensi Saya') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="'#'">
+                    {{ __('Riwayat Absensi') }}
+                </x-responsive-nav-link>
+            @endif
+        </div>
+
+        {{-- Responsive Settings Options --}}
+        <div class="pt-4 pb-1 border-t border-gray-200">
+            <div class="px-4">
+                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
+                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+            </div>
+
+            <div class="mt-3 space-y-1">
+                <x-responsive-nav-link :href="route('profile.edit')">
+                    {{ __('Profile') }}
+                </x-responsive-nav-link>
+
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <x-responsive-nav-link :href="route('logout')"
+                            onclick="event.preventDefault();
+                                            this.closest('form').submit();">
+                        {{ __('Log Out') }}
+                    </x-responsive-nav-link>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+```
+
+---
+
+## 🎉 Uji Coba Akhir & Kesimpulan
+
+### Testing Lengkap
+
+1. **Buka halaman `/users`**
+2. **Klik ikon mata** pada salah satu data karyawan - Anda akan melihat halaman detail lengkap
+3. **Kembali ke `/users`**
+4. **Klik ikon pensil** untuk edit data - Ubah nama atau role, lalu klik "Update"
+5. **Klik ikon tempat sampah** untuk hapus - Konfirmasi, dan data akan terhapus
+
+### Kredensial Login
+
+- **Admin**: `admin@gmail.com` / `password`
+- **Karyawan**: `karyawan@gmail.com` / `password`
+
+---
+
+## ✅ Apa yang Sudah Kita Capai?
+
+Anda telah berhasil membangun fondasi aplikasi absensi yang kokoh:
+
+- Sistem otentikasi lengkap dengan Laravel Breeze
+- Manajemen role (Admin dan Karyawan)
+- Fitur CRUD penuh untuk manajemen pengguna
+- Middleware untuk proteksi rute
+- Interface yang responsif dan modern dengan Tailwind CSS
+- Validasi data yang ketat
+- Flash messages untuk feedback pengguna
+- Navigation menu yang dinamis berdasarkan role
+
+---
+
+## 🚀 Langkah Selanjutnya (Part 2)
+
+Fondasi aplikasi sudah sangat kuat. Di **Part 2**, kita akan melanjutkan dengan:
+
+- Fitur Absensi Harian untuk Admin
+- Fitur Absensi Karyawan (Check-in/Check-out)
+- Riwayat Absensi
+- Laporan dan Statistik
+- Management Hari Libur
+
+---
+
+## 📚 Informasi Part 2
+
+Untuk melanjutkan pengembangan aplikasi absensi dengan fitur-fitur lanjutan, kunjungi:
+
+**[Part 2 - Panduan Absensi Project](https://github.com/ahmad-syaifuddin/part2-panduan-absensi-project.git)**
+
+---
+
+## 💡 Tips Pengembangan
+
+- Selalu backup database sebelum melakukan perubahan besar
+- Gunakan `php artisan migrate:fresh --seed` untuk reset database saat development
+- Manfaatkan Laravel Debugbar untuk debugging
+- Dokumentasikan setiap perubahan yang Anda buat
+
+---
+
+**🎊 SELAMAT!** Anda telah menyelesaikan Part 1 dari tutorial ini dengan sukses!
