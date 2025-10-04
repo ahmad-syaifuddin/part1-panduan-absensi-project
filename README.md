@@ -1126,6 +1126,179 @@ Coba edit lagi dan ubah passwordnya. Setelah update, coba logout dan login kemba
 
 ---
 
+# Tahap 6: Fungsionalitas Detail dan Hapus Pengguna
+## Langkah 13: Menampilkan Detail Pengguna (Metode show dan View)
+Fungsi ini berguna jika kita ingin melihat semua informasi terkait seorang pengguna dalam satu halaman, terutama detail data employee yang tidak semua ditampilkan di tabel utama.
+
+### 13.1. Update UserController (Metode show)
+
+Buka app/Http/Controllers/UserController.php. Sama seperti metode edit, show akan menggunakan Route Model Binding untuk mengambil data pengguna secara otomatis.
+
+```PHP
+// app/Http/Controllers/UserController.php
+
+// ... (method index, create, store) ...
+
+/**
+ * Display the specified resource.
+ */
+public function show(User $user)
+{
+    // Kita panggil relasi 'employee' secara eksplisit
+    // untuk memastikan datanya termuat.
+    $user->load('employee');
+
+    return view('users.show', compact('user'));
+}
+
+// ... (method edit, update, destroy) ...
+```
+Catatan: $user->load('employee') digunakan untuk memastikan relasi employee dimuat, bahkan jika belum dimuat sebelumnya. Ini adalah praktik yang baik untuk memastikan data selalu tersedia di view.
+
+## 13.2. Buat View users.show.blade.php
+
+Buat file baru di resources/views/users/ bernama show.blade.php. Isi dengan kode berikut untuk menampilkan data secara terstruktur.
+
+```HTML
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Detail Pengguna') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900">
+                    <div class="mb-6">
+                        <a href="{{ route('users.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                            <i class="fas fa-arrow-left"></i> Kembali
+                        </a>
+                    </div>
+                    
+                    <div class="border-t border-gray-200">
+                        <dl>
+                            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt class="text-sm font-medium text-gray-500">Nama Lengkap</dt>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $user->name }}</dd>
+                            </div>
+                            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt class="text-sm font-medium text-gray-500">Alamat Email</dt>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $user->email }}</dd>
+                            </div>
+                            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt class="text-sm font-medium text-gray-500">Role</dt>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ ucfirst($user->role) }}</dd>
+                            </div>
+                            
+                            @if ($user->employee)
+                                <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">NIP</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $user->employee->nip }}</dd>
+                                </div>
+                                <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">Posisi / Jabatan</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $user->employee->posisi }} / {{ $user->employee->jabatan }}</dd>
+                                </div>
+                                <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">Tanggal Perekrutan</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ \Carbon\Carbon::parse($user->employee->tanggal_perekrutan)->isoFormat('D MMMM Y') }}</dd>
+                                </div>
+                                <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">No. HP & Alamat</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $user->employee->no_hp }} <br> {{ $user->employee->alamat }}</dd>
+                                </div>
+                                <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">Jenis Kelamin</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $user->employee->jenis_kelamin }}</dd>
+                                </div>
+                                <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">Status Karyawan</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ ucfirst($user->employee->status) }}</dd>
+                                </div>
+                            @else
+                                <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                    <dt class="text-sm font-medium text-gray-500">Data Karyawan</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">Tidak ditemukan (Pengguna ini adalah Admin).</dd>
+                                </div>
+                            @endif
+                        </dl>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
+```
+
+Catatan: Kita menggunakan Carbon (\Carbon\Carbon::...) untuk memformat tanggal perekrutan menjadi format yang lebih mudah dibaca (misal: "4 Oktober 2025").
+
+## Langkah 14: Logika Hapus Data (Metode destroy)
+Ini adalah langkah terakhir untuk fungsionalitas CRUD. Metode destroy akan menghapus pengguna dari database.
+
+### 14.1. Pastikan Form Hapus Sudah Benar
+
+Di file resources/views/users/index.blade.php, kita sudah membuat form untuk tombol hapus. Mari kita pastikan lagi kodenya.
+
+```HTML
+<form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus pengguna ini?');">
+    @csrf
+    @method('DELETE') <button type="submit" class="text-red-600 hover:text-red-900 ml-4" title="Hapus"><i class="fas fa-trash"></i></button>
+</form>
+```
+onsubmit="return confirm(...): Ini adalah Javascript sederhana untuk memunculkan kotak dialog konfirmasi sebelum form benar-benar dikirim. Ini adalah praktik keamanan yang baik untuk mencegah penghapusan data yang tidak disengaja.
+
+### 14.2. Update UserController (Metode destroy)
+
+Buka app/Http/Controllers/UserController.php dan isi method destroy():
+
+```PHP
+// app/Http/Controllers/UserController.php
+
+// ... (method update) ...
+
+/**
+ * Remove the specified resource from storage.
+ */
+public function destroy(User $user)
+{
+    // Hapus pengguna dari database
+    $user->delete();
+
+    // Redirect kembali ke halaman index dengan pesan sukses
+    return redirect()->route('users.index')
+                     ->with('success', 'Pengguna berhasil dihapus.');
+}
+```
+Logikanya sangat sederhana, $user->delete() akan menghapus baris data pengguna dari tabel users. Karena kita sudah mengatur onDelete('cascade') pada migrasi employees, maka data karyawan yang terkait juga akan otomatis ikut terhapus.
+
+Uji Coba Akhir
+Buka halaman /users.
+
+Klik ikon mata (<i class="fas fa-eye"></i>) pada salah satu data karyawan. Anda akan diarahkan ke halaman detail yang menampilkan semua informasinya.
+
+Kembali ke halaman /users.
+
+Klik ikon tempat sampah (<i class="fas fa-trash"></i>) pada salah satu data.
+
+Sebuah kotak konfirmasi akan muncul. Klik "OK".
+
+Halaman akan me-refresh, pengguna tersebut akan hilang dari tabel, dan pesan sukses penghapusan akan muncul.
+
+SELAMAT! 🎉 Anda telah berhasil membangun fungsionalitas CRUD (Create, Read, Update, Delete) penuh untuk manajemen pengguna.
+
+Fondasi aplikasi absensi Anda kini sudah sangat kokoh. Kita sudah punya:
+
+Sistem otentikasi.
+
+Manajemen role admin dan karyawan.
+
+Fitur lengkap untuk mengelola data pengguna.
+
+---
+
 # 4.4. Blade Views untuk CRUD
 Terakhir, kita buat file-file Blade untuk antarmuka pengguna. Pastikan untuk membuat folder admin/users di dalam resources/views.
 
