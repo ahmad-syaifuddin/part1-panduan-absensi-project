@@ -307,10 +307,10 @@ Buka database/factories/UserFactory.php dan tambahkan role.
 
 namespace Database\Factories;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Faker\Factory as FakerFactory; // Boleh dihapus jika tidak dipakai di sini
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Faker\Factory as FakerFactory;
 
 class UserFactory extends Factory
 {
@@ -318,9 +318,10 @@ class UserFactory extends Factory
 
     public function definition(): array
     {
+        $faker = FakerFactory::create('id_ID');
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+            'name' => $faker->name(),
+            'email' => $faker->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
@@ -394,10 +395,10 @@ class UserSeeder extends Seeder
     {
         // Membuat 1 User Admin
         User::factory()->create([
-            'name' => 'Admin User',
+            'name' => 'Admin Utama',
             'email' => 'admin@gmail.com',
             'role' => 'admin',
-            'password' => Hash::make('admin123'),
+            'password' => Hash::make('password'),
         ]);
 
         // Membuat 1 User Karyawan untuk testing
@@ -405,7 +406,7 @@ class UserSeeder extends Seeder
             'name' => 'Test Karyawan',
             'email' => 'karyawan@gmail.com',
             'role' => 'karyawan',
-            'password' => Hash::make('karyawan123'),
+            'password' => Hash::make('password'),
         ]);
 
         // Membuat 10 Karyawan dummy menggunakan factory
@@ -437,10 +438,10 @@ class DatabaseSeeder extends Seeder
         // Membuat 1 User Admin
         // Kita tidak perlu membuat data employee untuk admin
         User::factory()->create([
-            'name' => 'Admin User',
+            'name' => 'Admin Utama',
             'email' => 'admin@gmail.com',
             'role' => 'admin',
-            'password' => Hash::make('admin123'),
+            'password' => Hash::make('password'),
         ]);
 
         // Membuat 1 User Karyawan untuk testing dengan data employee
@@ -451,7 +452,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Karyawan Test',
             'email' => 'karyawan@gmail.com',
             'role' => 'karyawan',
-            'password' => Hash::make('karyawan123'),
+            'password' => Hash::make('password'),
         ]);
 
 
@@ -527,9 +528,9 @@ php artisan migrate:fresh --seed
 ```
 Sekarang database Anda sudah terisi dengan 1 admin, 1 karyawan testing, dan 10 karyawan dummy.
 
-Admin Login: admin@gmail.com / admin123
+Admin Login: admin@gmail.com / password
 
-Karyawan Login: karyawan@gmail.com / karyawan123
+Karyawan Login: karyawan@gmail.com / password
 
 Sampai di sini, fondasi aplikasi kita sudah sangat kuat. Kita sudah punya:
 
