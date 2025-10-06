@@ -1557,23 +1557,17 @@ Anda telah berhasil membangun fondasi aplikasi absensi yang kokoh:
 
 ---
 
-## 🚀 Langkah Selanjutnya (Part 2)
+## 🚀 Langkah Selanjutnya (Part 1.5)
 
-Fondasi aplikasi sudah sangat kuat. Di **Part 2**, kita akan melanjutkan dengan:
-
-- Fitur Absensi Harian untuk Admin
-- Fitur Absensi Karyawan (Check-in/Check-out)
-- Riwayat Absensi
-- Laporan dan Statistik
-- Management Hari Libur
-
+Fondasi aplikasi sudah sangat kuat. Di **Part 1.5**, kita akan melanjutkan dengan:
+Fitur untuk menambahkan data detail karyawan (Employee) dari antarmuka admin memang belum ada dalam panduan tersebut. Ini adalah celah logika yang sangat penting.
 ---
 
-## 📚 Informasi Part 2
+## 📚 Informasi Part 1.5 (2 Setengah)
 
-Untuk melanjutkan pengembangan aplikasi absensi dengan fitur-fitur lanjutan yaitu ``**Fitur utama Absensi pembuatan Logik dan view blade untuk menyimpan data absensi karyawan**``, kunjungi:
+Untuk melanjutkan pengembangan aplikasi absensi dengan fitur-fitur lanjutan yaitu ``**Fitur untuk menambahkan data detail karyawan (Employee) dari antarmuka admin memang belum ada dalam panduan tersebut. Ini adalah celah logika yang sangat penting.``, kunjungi:
 
-**[Part 2 - Panduan Absensi Project](https://github.com/ahmad-syaifuddin/part2-panduan-absensi-project.git)**
+**[Part 1.5 - Panduan Absensi Project](https://github.com/ahmad-syaifuddin/part1.5-panduan-absensi-project.git)**
 
 ---
 
