@@ -1,3 +1,10 @@
+<div align="center">
+
+<p> <b>Visitors Count 👁️</b> </p>
+<img src="https://profile-counter.deno.dev/part1-panduan-absensi-project/count.svg" alt="Profile Counter Repo :: Visitor's Count" />
+
+</div>
+
 # 📚 Panduan Lengkap: Membuat Aplikasi Absensi dengan Laravel 10 & Breeze
 
 > **Catatan**: Panduan ini menggunakan Laravel 10 dengan Laravel Breeze untuk sistem autentikasi.
