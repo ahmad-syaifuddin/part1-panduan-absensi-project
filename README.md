@@ -1560,12 +1560,13 @@ Anda telah berhasil membangun fondasi aplikasi absensi yang kokoh:
 ## 🚀 Langkah Selanjutnya (Part 1.5)
 
 Fondasi aplikasi sudah sangat kuat. Di **Part 1.5**, kita akan melanjutkan dengan:
-Fitur untuk menambahkan data detail karyawan (Employee) dari antarmuka admin memang belum ada dalam panduan tersebut. Ini adalah celah logika yang sangat penting.
+<p> - Fitur untuk menambahkan data detail karyawan (Employee) dari antarmuka admin memang belum ada dalam panduan tersebut. Ini adalah celah logika yang sangat penting. </p>
+
 ---
 
 ## 📚 Informasi Part 1.5 (2 Setengah)
 
-Untuk melanjutkan pengembangan aplikasi absensi dengan fitur-fitur lanjutan yaitu ``**Fitur untuk menambahkan data detail karyawan (Employee) dari antarmuka admin memang belum ada dalam panduan tersebut. Ini adalah celah logika yang sangat penting.``, kunjungi:
+Untuk melanjutkan pengembangan aplikasi absensi dengan fitur-fitur lanjutan yaitu **``Fitur untuk menambahkan data detail karyawan (Employee) dari antarmuka admin memang belum ada dalam panduan tersebut. Ini adalah celah logika yang sangat penting.``** kunjungi:
 
 **[Part 1.5 - Panduan Absensi Project](https://github.com/ahmad-syaifuddin/part1.5-panduan-absensi-project.git)**
 
